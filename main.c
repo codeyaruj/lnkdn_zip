@@ -54,6 +54,14 @@ int main() {
     
     input_disable_raw_mode();
     render_clear_screen();
-        
+
+    printf("\n");
+    printf("╔═══════════════════════════════════════╗\n");
+    printf("║                                       ║\n");
+    printf("║     Thanks for playing ZIP PUZZLE!    ║\n");
+    printf("║                                       ║\n");
+    printf("╚═══════════════════════════════════════╝\n");
+    printf("\n");
+
     return 0;
 }
