@@ -113,3 +113,88 @@ void stack_free(UndoStack *stack) {
     }
     stack->size = 0;
 }
+
+/* ============================================================================
+ * BOARD OPERATIONS
+ * ============================================================================ */
+
+/* Allocate and initialize a board */
+Board *board_create(int height, int width) {
+    Board *board = (Board *)malloc(sizeof(Board));
+    if (!board) return NULL;
+    
+    board->height = height;
+    board->width = width;
+    board->max_number = 0;
+    
+    /* Allocate grid */
+    board->grid = (Cell **)malloc(height * sizeof(Cell *));
+    if (!board->grid) {
+        free(board);
+        return NULL;
+    }
+    
+    for (int i = 0; i < height; i++) {
+        board->grid[i] = (Cell *)calloc(width, sizeof(Cell));
+        if (!board->grid[i]) {
+            for (int j = 0; j < i; j++) {
+                free(board->grid[j]);
+            }
+            free(board->grid);
+            free(board);
+            return NULL;
+        }
+    }
+    
+    /* Initialize all cells as empty */
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            board->grid[i][j].type = CELL_EMPTY;
+            board->grid[i][j].number = 0;
+        }
+    }
+    
+    return board;
+}
+
+/* Free board memory */
+void board_free(Board *board) {
+    if (!board) return;
+    for (int i = 0; i < board->height; i++) {
+        free(board->grid[i]);
+    }
+    free(board->grid);
+    free(board);
+}
+
+/* Set a cell to be a wall */
+void board_set_wall(Board *board, int row, int col) {
+    board->grid[row][col].type = CELL_WALL;
+}
+
+/* Set a cell to be a numbered waypoint */
+void board_set_number(Board *board, int row, int col, int number) {
+    board->grid[row][col].type = CELL_NUMBER;
+    board->grid[row][col].number = number;
+    if (number > board->max_number) {
+        board->max_number = number;
+    }
+}
+
+/* Initialize player at starting position (cell with number 1) */
+bool board_init_player(Board *board) {
+    for (int i = 0; i < board->height; i++) {
+        for (int j = 0; j < board->width; j++) {
+            if (board->grid[i][j].type == CELL_NUMBER && 
+                board->grid[i][j].number == 1) {
+                board->player.row = i;
+                board->player.col = j;
+                board->player.next_number = 2; /* Already at 1, looking for 2 */
+                /* Mark starting cell as visited */
+                board->grid[i][j].type = CELL_PATH;
+                return true;
+            }
+        }
+    }
+    return false;
+}
