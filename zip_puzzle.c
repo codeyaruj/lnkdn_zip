@@ -366,3 +366,119 @@ bool try_move(Board *board, char direction, UndoStack *undo_stack) {
     
     return false;
 }
+/* ============================================================================
+ * PHASE 2: UNDO IMPLEMENTATION
+ * ============================================================================ */
+
+/* Undo the last move */
+bool undo_move(Board *board, UndoStack *undo_stack) {
+    if (stack_is_empty(undo_stack)) {
+        return false;
+    }
+    
+    UndoState state;
+    if (!stack_pop(undo_stack, &state)) {
+        return false;
+    }
+    
+    /* Restore the cell we moved to (restore its original state) */
+    board->grid[board->player.row][board->player.col] = state.previous_cell;
+    
+    /* Restore player position and state */
+    board->player.row = state.row;
+    board->player.col = state.col;
+    board->player.next_number = state.next_number;
+    
+    return true;
+}
+
+/* ============================================================================
+ * WIN CONDITION
+ * ============================================================================ */
+
+/* Check if player has won */
+bool check_win(Board *board) {
+    /* Win condition: next_number > max_number means we've visited all numbers */
+    return board->player.next_number > board->max_number;
+}
+
+/* ============================================================================
+ * MAIN GAME LOOP
+ * ============================================================================ */
+
+int main(void) {
+    /* Create puzzle */
+    Board *board = create_puzzle();
+    if (!board) {
+        fprintf(stderr, "Failed to create puzzle\n");
+        return 1;
+    }
+    
+    /* Initialize undo stack */
+    UndoStack undo_stack;
+    stack_init(&undo_stack);
+    
+    /* Game loop */
+    bool running = true;
+    bool invalid_move = false;
+    bool undo_failed = false;
+    
+    while (running) {
+        /* Render board */
+        board_render(board);
+        
+        /* Show feedback messages */
+        if (invalid_move) {
+            printf("Invalid move! Try again.\n");
+            invalid_move = false;
+        }
+        if (undo_failed) {
+            printf("Nothing to undo!\n");
+            undo_failed = false;
+        }
+        
+        /* Check win condition */
+        if (check_win(board)) {
+            printf("*** CONGRATULATIONS! YOU WON! ***\n");
+            printf("Press any key to exit...\n");
+            getchar();
+            running = false;
+            continue;
+        }
+        
+        /* Get input */
+        printf("Your move: ");
+        char input[10];
+        if (!fgets(input, sizeof(input), stdin)) {
+            break;
+        }
+        
+        char command = input[0];
+        
+        /* Process input */
+        if (command == 'q' || command == 'Q') {
+            running = false;
+        } else if (command == 'u' || command == 'U') {
+            /* PHASE 2: Undo */
+            if (!undo_move(board, &undo_stack)) {
+                undo_failed = true;
+            }
+        } else if (command == 'w' || command == 'W' ||
+                   command == 'a' || command == 'A' ||
+                   command == 's' || command == 'S' ||
+                   command == 'd' || command == 'D') {
+            /* PHASE 1: Movement */
+            if (!try_move(board, command, &undo_stack)) {
+                invalid_move = true;
+            }
+        } else {
+            invalid_move = true;
+        }
+    }
+    
+    /* Cleanup */
+    stack_free(&undo_stack);
+    board_free(board);
+    
+    return 0;
+}
