@@ -198,3 +198,52 @@ bool board_init_player(Board *board) {
     }
     return false;
 }
+
+/* ============================================================================
+ * HARDCODED PUZZLE
+ * ============================================================================ */
+
+Board *create_puzzle() {
+    /* Create a 10x10 puzzle */
+    Board *board = board_create(10, 10);
+    if (!board) return NULL;
+    
+    /* Define walls (border + internal obstacles) */
+    /* Top and bottom borders */
+    for (int j = 0; j < 10; j++) {
+        board_set_wall(board, 0, j);
+        board_set_wall(board, 9, j);
+    }
+    /* Left and right borders */
+    for (int i = 0; i < 10; i++) {
+        board_set_wall(board, i, 0);
+        board_set_wall(board, i, 9);
+    }
+    
+    /* Internal walls */
+    board_set_wall(board, 3, 3);
+    board_set_wall(board, 3, 4);
+    board_set_wall(board, 3, 5);
+    board_set_wall(board, 6, 3);
+    board_set_wall(board, 6, 4);
+    board_set_wall(board, 6, 5);
+    board_set_wall(board, 4, 7);
+    board_set_wall(board, 5, 7);
+    
+    /* Place numbers */
+    board_set_number(board, 1, 1, 1);  /* Start */
+    board_set_number(board, 1, 7, 2);
+    board_set_number(board, 4, 8, 3);
+    board_set_number(board, 7, 7, 4);
+    board_set_number(board, 7, 2, 5);
+    board_set_number(board, 4, 2, 6);
+    board_set_number(board, 2, 5, 7);  /* End */
+    
+    /* Initialize player at position 1 */
+    if (!board_init_player(board)) {
+        board_free(board);
+        return NULL;
+    }
+    
+    return board;
+}
