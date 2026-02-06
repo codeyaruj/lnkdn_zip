@@ -247,3 +247,122 @@ Board *create_puzzle() {
     
     return board;
 }
+
+/* ============================================================================
+ * RENDERING
+ * ============================================================================ */
+
+void board_render(Board *board) {
+    /* Clear screen (ANSI escape code) */
+    printf("\033[2J\033[H");
+    
+    printf("=== ZIP PUZZLE ===\n");
+    printf("Next number to reach: %d / %d\n", 
+           board->player.next_number, board->max_number);
+    printf("WASD to move, U to undo, Q to quit\n\n");
+    
+    for (int i = 0; i < board->height; i++) {
+        for (int j = 0; j < board->width; j++) {
+            /* Check if cursor is at this position */
+            if (i == board->player.row && j == board->player.col) {
+                printf("@ ");
+                continue;
+            }
+            
+            Cell cell = board->grid[i][j];
+            switch (cell.type) {
+                case CELL_WALL:
+                    printf("# ");
+                    break;
+                case CELL_EMPTY:
+                    printf(". ");
+                    break;
+                case CELL_NUMBER:
+                    printf("%d ", cell.number);
+                    break;
+                case CELL_PATH:
+                    printf("* ");
+                    break;
+            }
+        }
+        printf("\n");
+    }
+    printf("\n");
+}
+
+/* ============================================================================
+ * MOVEMENT VALIDATION AND EXECUTION
+ * ============================================================================ */
+
+bool is_in_bounds(Board *board, int row, int col) {
+    return row >= 0 && row < board->height && col >= 0 && col < board->width;
+}
+
+bool is_valid_move(Board *board, int target_row, int target_col) {
+
+    if (!is_in_bounds(board, target_row, target_col)) {
+        return false;
+    }
+    
+    Cell target = board->grid[target_row][target_col];
+    
+    if (target.type == CELL_WALL) {
+        return false;
+    }
+    
+    if (target.type == CELL_PATH) {
+        return false;
+    }
+    
+    if (target.type == CELL_NUMBER) {
+        if (target.number != board->player.next_number) {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+void execute_move(Board *board, int target_row, int target_col, 
+                  UndoStack *undo_stack) {
+
+    UndoState undo_state;
+    undo_state.row = board->player.row;
+    undo_state.col = board->player.col;
+    undo_state.next_number = board->player.next_number;
+    undo_state.prev_row = board->player.row;
+    undo_state.prev_col = board->player.col;
+    undo_state.previous_cell = board->grid[target_row][target_col];
+    
+    if (board->grid[target_row][target_col].type == CELL_NUMBER) {
+        board->player.next_number++;
+    }
+    
+    board->grid[target_row][target_col].type = CELL_PATH;
+    
+    /* Move player */
+    board->player.row = target_row;
+    board->player.col = target_col;
+    
+    stack_push(undo_stack, undo_state);
+}
+
+bool try_move(Board *board, char direction, UndoStack *undo_stack) {
+    int new_row = board->player.row;
+    int new_col = board->player.col;
+    
+    switch (direction) {
+        case 'w': case 'W': new_row--; break;  /* Up */
+        case 's': case 'S': new_row++; break;  /* Down */
+        case 'a': case 'A': new_col--; break;  /* Left */
+        case 'd': case 'D': new_col++; break;  /* Right */
+        default: return false;
+    }
+    
+    if (is_valid_move(board, new_row, new_col)) {
+        execute_move(board, new_row, new_col, undo_stack);
+        return true;
+    }
+    
+    return false;
+}
