@@ -7,3 +7,4 @@ File structure: zip_puzzle.c
 
 Phase 2: Engine and UI split.
 File structure: engine.c + ui_terminal.c + main.c
+main.c is the glue between engine and ui
