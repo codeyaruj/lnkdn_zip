@@ -22,7 +22,6 @@
 /* ============================================================================
  * PATH TRACKING STRUCTURE
  * ============================================================================ */
-
 typedef struct PathNode {
     int row;
     int col;
@@ -34,9 +33,11 @@ typedef struct {
     PathNode *tail;
     int length;
 } PathList;
+
 /* ============================================================================
  * PATH LIST OPERATIONS
  * ============================================================================ */
+
 static PathList *path_list_create(void) {
     PathList *list = (PathList *)malloc(sizeof(PathList));
     if (!list) return NULL;
@@ -77,12 +78,14 @@ static void path_list_free(PathList *list) {
     }
     free(list);
 }
+
 /* ============================================================================
  * HELPER FUNCTIONS
  * ============================================================================ */
 static bool is_in_inner_bounds(int rows, int cols, int row, int col) {
     return row > 0 && row < rows - 1 && col > 0 && col < cols - 1;
 }
+
 static void shuffle_array(int *array, int size) {
     for (int i = size - 1; i > 0; i--) {
         int j = rand() % (i + 1);
@@ -136,7 +139,7 @@ static bool generate_path_dfs(
         }
     }
     
-     return false;
+    return false;
 }
 static bool **create_visited_grid(int rows, int cols) {
     bool **visited = (bool **)malloc(rows * sizeof(bool *));
@@ -155,6 +158,7 @@ static bool **create_visited_grid(int rows, int cols) {
     
     return visited;
 }
+
 static void free_visited_grid(bool **visited, int rows) {
     if (!visited) return;
     for (int i = 0; i < rows; i++) {
@@ -166,7 +170,6 @@ static void free_visited_grid(bool **visited, int rows) {
 /* ============================================================================
  * PUZZLE GENERATION PIPELINE
  * ============================================================================ */
-
 static void add_borders(Board *board) {
     for (int col = 0; col < board->width; col++) {
         board_set_wall(board, 0, col);
@@ -189,6 +192,7 @@ static void place_numbers_on_path(Board *board, PathList *path) {
         current = current->next;
     }
 }
+
 
 static void add_random_walls(Board *board, bool **visited, float wall_ratio) {
     for (int row = 1; row < board->height - 1; row++) {
@@ -213,25 +217,27 @@ Board *generate_puzzle(
     float wall_ratio,
     unsigned int seed
 ) {
+    
     if (rows < 5 || cols < 5) {
-        return NULL;  
+        return NULL;  /* Too small for meaningful puzzle */
     }
     
     if (path_ratio <= 0.0f || path_ratio > 1.0f) {
-        return NULL;  
+        return NULL;  /* Invalid ratio */
+
     }
     
     if (wall_ratio < 0.0f || wall_ratio > 1.0f) {
-        return NULL;  
+        return NULL;  /* Invalid ratio */
     }
     
     srand(seed);
-    
     
     Board *board = board_create(rows, cols);
     if (!board) {
         return NULL;
     }
+    
     add_borders(board);
     
     int inner_area = (rows - 2) * (cols - 2);
@@ -290,29 +296,18 @@ Board *generate_puzzle(
         );
     }
     
-    
     if (path->length < 3) {
+        /* Path too short - fail gracefully */
         path_list_free(path);
         free_visited_grid(visited, rows);
         board_free(board);
         return NULL;
     }
-    
-    
     place_numbers_on_path(board, path);
-    
-    add_random_walls(board, visited, wall_ratio);
-    
-    if (!board_init_player(board)) {
-        path_list_free(path);
-        free_visited_grid(visited, rows);
-        board_free(board);
-        return NULL;
-    }
+        add_random_walls(board, visited, wall_ratio);
     
     path_list_free(path);
     free_visited_grid(visited, rows);
     
     return board;
 }
-
