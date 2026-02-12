@@ -1,6 +1,5 @@
 /*
  * engine.h - Game Engine Public API
- * Immutable Board + Separate Runtime State Architecture
  */
 
 #ifndef ENGINE_H
